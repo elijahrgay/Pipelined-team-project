@@ -1,0 +1,36 @@
+\documentclass[11pt,twocolumn]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{times}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\setlength{\columnsep}{0.25in}
+
+\title{CPE380 Project 4: Pipelined MIPS Processor\\[4pt]
+       \large Implementor's Notes}
+
+\author{Michael Naughton and Elijah Gray\\
+University of Kentucky, Lexington, KY USA\\
+\texttt{mcna226@uky.edu}\\
+\texttt{elijah.gray@uky.edu}}
+
+\date{11/24/2025} % no date
+
+\begin{document}
+
+\maketitle
+
+% Main body with two columns
+
+\section*{ABSTRACT}
+This project was focused around modifying an existing implementation of a pipelined MIPS processor. The goal was to gain experience with designing pipelined processors by implementing several instructions.
+
+\section{General Approach}
+The first instruction to implement was the MIPS \textbf{nor}, following the format \textbf{nor \$rd, \$rs, \$rt}. This required defining the a new funct field for \textbf{nor}, a new ALU code, a new decode statement for the ID (instruction decode) stage, adding the ALU code to EX (execute) stage, and finally adding a \textbf{\$display} statement for \textbf{nor} to the state-by-state trace. All of these steps were necessary for all of the new instructions. In the EX stage, the output of the ALU was set to equal \textit{$\sim(ID_s | ID_{src})$}.
+
+
+
+\section{Issues}
+
+
+\end{document}
