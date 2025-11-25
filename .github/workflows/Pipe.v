@@ -30,7 +30,7 @@
 // Instruction encoding
 `define	RTYPE	6'h00	// OP field for all RTYPE instructions
 `define BEQ	6'h04	// OP field
-`define BNE 6'h05 // OP field
+`define BNE 6'h06 // OP field
 `define	ADDIU	6'h09	// OP field
 `define	SLTIU	6'h0b	// OP field
 `define	ANDI	6'h0c	// OP field
@@ -73,26 +73,33 @@ reg `WORD r `REGCNT;
 // Initialize register file and memory
 initial begin
     r[1] = 22; r[2] = 1; r[3] = 42;
-    r[4] = 601;	r[5] = 11811; r[6] = -1;
-    `RPACK(m[0], 3, 4, 3, 0, `SUBU)
-    `RPACK(m[1], 3, 2, 1, 0, `SRAV)
-    `RPACK(m[0], 2, 3, 1, 0, `ADDU)
-    `RPACK(m[1], 2, 3, 1, 0, `SLTU)
-    `RPACK(m[2], 3, 5, 1, 0, `AND)
-    `RPACK(m[3], 5, 3, 1, 0, `OR)
-    `RPACK(m[4], 3, 5, 1, 0, `XOR)
-    `RPACK(m[5], 4, 3, 1, 0, `SUBU)
-    `IPACK(m[6], `ADDIU, 3, 1, -1)
-    `IPACK(m[7], `SLTIU, 5, 1, 12345)
-    `IPACK(m[8], `ANDI, 3, 1, 3)
-    `IPACK(m[9], `ORI, 3, 1, 3)
-    `IPACK(m[10], `XORI, 3, 1, 3)
-    `IPACK(m[11], `LUI, 0, 1, 1)
-    `IPACK(m[12], `LW, 2, 1, 1023)
-    `IPACK(m[13], `SW, 0, 2, 1024)
-    `IPACK(m[14], `ADDIU, 6, 6, 1)
+    r[4] = 601;	r[5] = 11811; r[6] = 88;
+    `RPACK(m[0], 4, 5, 4, 0, `NOR)
+    `RPACK(m[1], 3, 2, 4, 0, `SLLV)
+    `RPACK(m[2], 6, 2, 4, 0, `SRLV)
+    `RPACK(m[3], 5, 2, 4, 0, `SRAV)
+    `RPACK(m[4], 3, 5, 4, 0, `SUBU)
+    `RPACK(m[5], 6, 2, 6, 0, `SRAV)
+    `IPACK(m[6], `BNE, 6, 1, -2)
+    `RPACK(m[7], 3, 4, 3, 0, `SUBU)
+    `RPACK(m[8], 3, 2, 1, 0, `SRAV)
+    `RPACK(m[9], 2, 3, 1, 0, `ADDU)
+    `RPACK(m[10], 2, 3, 1, 0, `SLTU)
+    `RPACK(m[11], 3, 5, 1, 0, `AND)
+    `RPACK(m[12], 5, 3, 1, 0, `OR)
+    `RPACK(m[13], 3, 5, 1, 0, `XOR)
+    `RPACK(m[14], 4, 3, 1, 0, `SUBU)
+    `IPACK(m[15], `ADDIU, 3, 1, -1)
+    `IPACK(m[16], `SLTIU, 5, 1, 12345)
+    `IPACK(m[17], `ANDI, 3, 1, 3)
+    `IPACK(m[18], `ORI, 3, 1, 3)
+    `IPACK(m[19], `XORI, 3, 1, 3)
+    `IPACK(m[20], `LUI, 0, 1, 1)
+    `IPACK(m[21], `LW, 2, 1, 1023)
+    `IPACK(m[22], `SW, 0, 2, 1024)
+    `IPACK(m[23], `ADDIU, 6, 6, 1)
     
-    m[15] = 0;
+    m[24] = 0;
     m[256] = 22;
 end
 
@@ -199,7 +206,7 @@ always @(posedge clk) if (running && !ID_Bad) begin
     imm = {{16{squashed[15]}}, squashed `IMM};
     target <= IF_pc + {imm[29:0], 2'b00};
 
-	  squash <= (Branch && (squashed `OP == BEQ && (s == t)) || (squashed `OP == BNE && (s != t))
+    squash <= (Branch && ((s == t && squashed`OP == `BEQ) || (s != t && squashed`OP == `BNE)));
     ID_s <= s;
     ID_t <= t;
     ID_src <= (ALUSrc ? imm : t);
@@ -267,7 +274,8 @@ end
 always @(posedge clk) if (running) begin
 `define	Fs	(canfwds ? (EX_deps ? "EX_" : (MEM_deps ? "MEM_" : "WB_")) : "")
 `define	Ft	(canfwdt ? (EX_dept ? "EX_" : (MEM_dept ? "MEM_" : "WB_")) : "")
-  $display("\n    running=%1d blocked=%1d s=%s$%1d t=%s$%1d squash=%1d", running, blocked, `Fs, IF_ir `RS, `Ft, IF_ir `RT, squash);
+  $display("\nStandard output register r[4] = %d", r[4]);
+  $display("    running=%1d blocked=%1d s=%s$%1d t=%s$%1d squash=%1d", running, blocked, `Fs, IF_ir `RS, `Ft, IF_ir `RT, squash);
   $display("IF  ir=%x pc=%1d", IF_ir, IF_pc);
   case (IF_ir `OP)
     `RTYPE: begin
@@ -285,6 +293,7 @@ always @(posedge clk) if (running) begin
       endcase
     end
     `BEQ:    $display("IF  beq $%1d,$%1d,offset=$%1d", IF_ir `RT, IF_ir `RS, IF_ir `IMM);
+    `BNE:    $display("IF  bne $%1d,$%1d,offset=$%1d", IF_ir `RT, IF_ir `RS, IF_ir `IMM);
     `ADDIU:  $display("IF  addiu $%1d,$%1d,$%1d", IF_ir `RT, IF_ir `RS, IF_ir `IMM);
     `SLTIU:  $display("IF  sltiu $%1d,$%1d,$%1d", IF_ir `RT, IF_ir `RS, IF_ir `IMM);
     `ANDI:   $display("IF  andi $%1d,$%1d,$%1d", IF_ir `RT, IF_ir `RS, IF_ir `IMM);
