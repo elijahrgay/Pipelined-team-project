@@ -42,7 +42,7 @@ Next, \textbf{sllv} is tested, shifting \textbf{42} left by \textbf{1} which sho
 
 Next, \textbf{srlv} is tested, shifting \textbf{88} right by \textbf{1} resulting in \textbf{r[4] = 44}.
 
-Next, \textbf{srav} is tested, first by shifting \textbf{11811} right by \textbf{1} resulting in \textbf{5905}. Then, \textbf{-11769} is shifted right by \textbf{1} resulting in \textbf{-5884} or \textbf{59652} unsigned.
+Next, \textbf{srav} is tested, first by shifting \textbf{11811} right by \textbf{1} resulting in \textbf{5905}. Then, \textbf{-11769} (or \textbf{4294955527} unsigned) is shifted right by \textbf{1} resulting in \textbf{-5885} or (\textbf{4294961411} unsigned).
 
 Finally, \textbf{bne} is tested by comparing the value stored in \textbf{r[6]} with the value in \textbf{22}. Initially \textbf{r[6] = 88}. If \textbf{r[6] != 22} the program branches back one instruction. The previous instruction halves \textbf{r[6]} and then compares it to /textbf{22} again. Once \textbf{r[6] == 22}, the program continues.
 
