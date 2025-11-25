@@ -23,7 +23,7 @@ University of Kentucky, Lexington, KY USA\\
 % Main body with two columns
 
 \section*{ABSTRACT}
-This project was focused around modifying an existing implementation of a pipelined MIPS processor. The goal was to gain experience with designing pipelined processors by implementing several instructions.
+This project was focused around modifying an existing implementation of a pipelined MIPS processor. The goal was to gain experience with designing pipelined processors by implementing several instructions. We added instructions for the NOR variable shift (sllv,srlv,srav) as well as BNE. We also had to extend the decoder and add ALU functionality.
 
 \section{General Approach}
 The first instruction to implement was the MIPS \textbf{nor}, following the format \textbf{nor \$rd, \$rs, \$rt}. This required defining the a new funct field for \textbf{nor}, a new ALU code, a new decode statement for the ID (instruction decode) stage, adding the ALU code to EX (execute) stage, and finally adding a \textbf{\$display} statement for \textbf{nor} to the state-by-state trace. All of these steps were necessary for all of the new instructions. In the EX stage, the output of the ALU was set to equal \textit{$\sim(ID_s | ID_{src})$}.
