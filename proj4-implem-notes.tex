@@ -34,6 +34,7 @@ The \textbf{sllv} instruction required shifting left using the value of the \tex
 
 For the \textbf{bne} instruction, branch comparison was performed in the ID stage by checking if \textit{$s \neq t$}. If the branch was taken, the instruction in IF was squashed, and the PC was updated to the branch target. Forwarding also ensured the correct register values were used during branch resolution to prevent hazards.
 
+
 \section{Issues}
 
 For the \textbf{srav} instruction, the initial solution used involved putting a \textbf{reg} declaration within an \textbf{always} block. This may have worked in SystemVerilog, but is invalid in Verilog.
