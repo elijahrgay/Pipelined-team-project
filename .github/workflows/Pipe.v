@@ -206,7 +206,7 @@ always @(posedge clk) if (running && !ID_Bad) begin
     imm = {{16{squashed[15]}}, squashed `IMM};
     target <= IF_pc + {imm[29:0], 2'b00};
 
-    squash <= (Branch && ((s == t && squashed`OP == `BEQ) || (s != t && squashed`OP == `BNE)));
+    squash <= (Branch && (squashed `OP == `BEQ && (s == t)) || (squashed `OP == `BNE && (s != t)));
     ID_s <= s;
     ID_t <= t;
     ID_src <= (ALUSrc ? imm : t);
