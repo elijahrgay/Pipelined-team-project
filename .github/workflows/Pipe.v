@@ -30,7 +30,6 @@
 // Instruction encoding
 `define	RTYPE	6'h00	// OP field for all RTYPE instructions
 `define BEQ	6'h04	// OP field
-`define BNE     6'h05   // OP field
 `define	ADDIU	6'h09	// OP field
 `define	SLTIU	6'h0b	// OP field
 `define	ANDI	6'h0c	// OP field
@@ -39,13 +38,15 @@
 `define	LUI	6'h0f	// OP field
 `define	LW	6'h23	// OP field
 `define	SW	6'h2b	// OP field
+`define SRLV 6'h06 // FUNCT field for SRLV
+`define SRAV 6'h07 // FUNCT field for SRLV
 `define	ADDU	6'h21	// FUNCT field
 `define	SUBU	6'h23	// FUNCT field
 `define	AND	6'h24	// FUNCT field
 `define	OR	6'h25	// FUNCT field
 `define	XOR	6'h26	// FUNCT field
+`define NOR 6'h27 // FUNCT field for NOR
 `define	SLTU	6'h2b	// FUNCT field
-`define SLLV    6'h04   // FUNCT field
 
 // Simplified ALU codes, default to lui
 `define	ALUAND	4'b0000
@@ -54,10 +55,10 @@
 `define	ALUSUB	4'b0110
 `define	ALUSLT	4'b0111
 `define	ALULUI	4'b1000
+`define ALUNOR 4'b1001  // Define ALU code for NOR
+`define ALUSRLV 4'b1011 // Define ALU code for SRLV
+`define ALUSRAV 4'b1100 // Define ALU code for SRAV
 `define	ALUXOR	4'b1111
-`define ALUSLLV 4'b0011
-`define ALUSRLV 4'b0100
-`define ALUSRAV 4'b0101
 
 // Generic multi-cycle processor
 module processor(halt, reset, clk);
@@ -70,6 +71,8 @@ reg `WORD r `REGCNT;
 initial begin
     r[1] = 22; r[2] = 1; r[3] = 42;
     r[4] = 601;	r[5] = 11811; r[6] = -1;
+    `RPACK(m[0], 3, 4, 3, 0, `SUBU)
+    `RPACK(m[1], 3, 2, 1, 0, `SRAV)
     `RPACK(m[0], 2, 3, 1, 0, `ADDU)
     `RPACK(m[1], 2, 3, 1, 0, `SLTU)
     `RPACK(m[2], 3, 5, 1, 0, `AND)
@@ -85,6 +88,7 @@ initial begin
     `IPACK(m[12], `LW, 2, 1, 1023)
     `IPACK(m[13], `SW, 0, 2, 1024)
     `IPACK(m[14], `ADDIU, 6, 6, 1)
+    
     m[15] = 0;
     m[256] = 22;
 end
@@ -166,15 +170,14 @@ always @(posedge clk) if (running && !ID_Bad) begin
 	  `AND:    begin RegDst=1; Branch=0; MemRead=0; ALUOp=`ALUAND; MemWrite=0; ALUSrc=0; RegWrite=1; Bad=0; end
 	  `OR:     begin RegDst=1; Branch=0; MemRead=0; ALUOp=`ALUOR;  MemWrite=0; ALUSrc=0; RegWrite=1; Bad=0; end
 	  `XOR:    begin RegDst=1; Branch=0; MemRead=0; ALUOp=`ALUXOR; MemWrite=0; ALUSrc=0; RegWrite=1; Bad=0; end
+    `NOR:    begin RegDst=1; Branch=0; MemRead=0; ALUOp=`ALUNOR; MemWrite=0; ALUSrc=0; RegWrite=1; Bad=0; end // Decode NOR
 	  `SLTU:   begin RegDst=1; Branch=0; MemRead=0; ALUOp=`ALUSLT; MemWrite=0; ALUSrc=0; RegWrite=1; Bad=0; end
+    `SRLV:   begin RegDst=1; Branch=0; MemRead=0; ALUOp=`ALUSRLV; MemWrite=0; ALUSrc=0; RegWrite=1; Bad=0; end // Devode SRLV
+    `SRAV:   begin RegDst=1; Branch=0; MemRead=0; ALUOp=`ALUSRAV; MemWrite=0; ALUSrc=0; RegWrite=1; Bad=0; end // Devode SRAV
 	  default: begin RegDst=0; Branch=0; MemRead=0; ALUOp=`ALUOR;  MemWrite=0; ALUSrc=0; RegWrite=0; Bad=1; end
-          `SLLV:   begin RegDst=1; Branch=0; MemRead=0; ALUOp=`ALUSLLV; MemWrite=0;ALUSrc=0; RegWrite=1; Bad=0; end
-
-
         endcase
       end
       `BEQ:    begin RegDst=0; Branch=1; MemRead=0; ALUOp=`ALUSUB; MemWrite=0; ALUSrc=0; RegWrite=0; Bad=0; end
-      `BNE:    begin RegDst=0; Branch=1; MemRead=0; ALUOp=`ALUSUB; MemWrite=0; ALUSrc=0; RegWrite=0; Bad=0; end
       `ADDIU:  begin RegDst=0; Branch=0; MemRead=0; ALUOp=`ALUADD; MemWrite=0; ALUSrc=1; RegWrite=1; Bad=0; end
       `SLTIU:  begin RegDst=0; Branch=0; MemRead=0; ALUOp=`ALUSLT; MemWrite=0; ALUSrc=1; RegWrite=1; Bad=0; end
       `ANDI:   begin RegDst=0; Branch=0; MemRead=0; ALUOp=`ALUAND; MemWrite=0; ALUSrc=1; RegWrite=1; Bad=0; end
@@ -191,7 +194,7 @@ always @(posedge clk) if (running && !ID_Bad) begin
     imm = {{16{squashed[15]}}, squashed `IMM};
     target <= IF_pc + {imm[29:0], 2'b00};
 
-    squash <= (Branch && ((s == t) ^ (squashed `OP == `BNE))));
+    squash <= (Branch && (s == t));
     ID_s <= s;
     ID_t <= t;
     ID_src <= (ALUSrc ? imm : t);
@@ -212,7 +215,9 @@ always @(posedge clk) if (running) begin
     `ALUSUB: alu = ID_s - ID_src;
     `ALUSLT: alu = ID_s < ID_src;
     `ALUXOR: alu = ID_s ^ ID_src;
-    `ALUSLLV: alu = ID_s << ID_t[4:0];
+    `ALUNOR: alu = ~(ID_s | ID_src); // NOR added as ALU operation
+    `ALUSRLV: alu = ID_s >> ID_src;  // SRLV added as ALU operation
+    `ALUSRAV: alu = ID_s[31] ? ~(32'hffffffff >> ID_src[4:0]) | (ID_s >> ID_src) : ID_s >> ID_src; // SRAV added as ALU operation
     default: alu = (ID_src << 16);
   endcase
 
@@ -267,6 +272,9 @@ always @(posedge clk) if (running) begin
 	`OR:     $display("IF  or $%1d,$%1d,$%1d", IF_ir `RD, IF_ir `RS, IF_ir `RT);
 	`XOR:    $display("IF  xor $%1d,$%1d,$%1d", IF_ir `RD, IF_ir `RS, IF_ir `RT);
 	`SLTU:   $display("IF  sltu $%1d,$%1d,$%1d", IF_ir `RD, IF_ir `RS, IF_ir `RT);
+  `NOR:    $display("IF  nor $%1d,$%1d,$%1d", IF_ir `RD, IF_ir `RS, IF_ir `RT);             // NOR output added to trace
+  `SRLV:   $display("IF  srlv $%1d,$%1d,$%1d", IF_ir `RD, IF_ir `RS, IF_ir `RT);            // SRLV output added to trace
+  `SRAV:   $display("IF  srav $%1d,$%1d,$%1d", IF_ir `RD, IF_ir `RS, IF_ir `RT);            // SRAV output added to trace
 	default: $display("IF  OP=%x RS=%1d RT=%1d RD=%1d SHAMT=%1d FUNCT=%x", IF_ir `OP, IF_ir `RS, IF_ir `RT, IF_ir `RD, IF_ir `SHAMT, IF_ir `FUNCT);
       endcase
     end
@@ -313,5 +321,3 @@ initial begin
   end
 end
 endmodule
-
-
