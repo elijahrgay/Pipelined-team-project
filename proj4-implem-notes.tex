@@ -39,4 +39,16 @@ For the \textbf{bne} instruction, branch comparison was performed in the ID stag
 
 For the \textbf{srav} instruction, the initial solution used involved putting a \textbf{reg} declaration within an \textbf{always} block. This may have worked in SystemVerilog, but is invalid in Verilog.
 
+\section{Testing}
+
+For readability, a new statement was added to the beginning of each trace that prints the value in register 4. Most of the tested instructions output to register 4 so that the result of that instruction can be read more easily. The added test cases can be found in \textbf{m[6:0]}. First the \textbf{nor} instruction is tested with the values \textbf{601} and \textbf{11811} which should result in \textbf{r[4] = 4294955396} by the time the PC reaches \textbf{20}.
+
+Next, \textbf{sllv} is tested, shifting \textbf{42} left by \textbf{1} which should result in \textbf{r[4] = 84} immediately after the result from the previous instruction.
+
+Next, \textbf{srlv} is tested, shifting \textbf{88} right by \textbf{1} resulting in \textbf{r[4] = 44}.
+
+Next, \textbf{srav} is tested, first by shifting \textbf{11811} right by \textbf{1} resulting in \textbf{5905}. Then, \textbf{-11769} (or \textbf{4294955527} unsigned) is shifted right by \textbf{1} resulting in \textbf{-5885} or (\textbf{4294961411} unsigned).
+
+Finally, \textbf{bne} is tested by comparing the value stored in \textbf{r[6]} with the value in \textbf{22}. Initially \textbf{r[6] = 88}. If \textbf{r[6] != 22} the program branches back one instruction. The previous instruction halves \textbf{r[6]} and then compares it to /textbf{22} again. Once \textbf{r[6] == 22}, the program continues.
+
 \end{document}
