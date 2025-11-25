@@ -30,6 +30,10 @@ The first instruction to implement was the MIPS \textbf{nor}, following the form
 
 The \textbf{srlv} and \textbf{srav} instructions were similar to the \textbf{nor} instruction. The only difference being how they were implemented in the ALU during the EX stage. For the \textbf{srlv} instruction it was as simple as using the built in ">>" operator. For \textbf{srav} a conditional had to be introduced. If the most significant bit was a '0', then the shift right operator sufficed. If, however, the MSB was a '1', then the number being shifted had to be sign extended to 64-bits before being shifted.
 
+The \textbf{sllv} instruction required shifting left using the value of the \textbf{rt} register, masked to the lower 5 bits, i.e. \textit{$ID_s << ID_t[4:0]$}. Forwarding and stalling logic had to be accounted for to handle dependencies when the source registers were being written to in previous cycles.
+
+For the \textbf{bne} instruction, branch comparison was performed in the ID stage by checking if \textit{$s \neq t$}. If the branch was taken, the instruction in IF was squashed, and the PC was updated to the branch target. Forwarding also ensured the correct register values were used during branch resolution to prevent hazards.
+
 \section{Issues}
 
 For the \textbf{srav} instruction, the initial solution used involved putting a \textbf{reg} declaration within an \textbf{always} block. This may have worked in SystemVerilog, but is invalid in Verilog.
