@@ -28,7 +28,7 @@ This project was focused around modifying an existing implementation of a pipeli
 \section{General Approach}
 The first instruction to implement was the MIPS \textbf{nor}, following the format \textbf{nor \$rd, \$rs, \$rt}. This required defining the a new funct field for \textbf{nor}, a new ALU code, a new decode statement for the ID (instruction decode) stage, adding the ALU code to EX (execute) stage, and finally adding a \textbf{\$display} statement for \textbf{nor} to the state-by-state trace. All of these steps were necessary for all of the new instructions. In the EX stage, the output of the ALU was set to equal \textit{$\sim(ID_s | ID_{src})$}.
 
-
+The \textbf{srlv} and \textbf{srav} instructions were similar to the \textbf{nor} instruction. The only difference being how they were implemented in the ALU during the EX stage. For the \textbf{srlv} instruction it was as simple as using the built in ">>" operator. For \textbf{srav} a conditional had to be introduced. If the most significant bit was a '0', then the shift right operator sufficed. If, however, the MSB was a '1', then the number being shifted had to be sign extended to 64-bits before being shifted.
 
 \section{Issues}
 
